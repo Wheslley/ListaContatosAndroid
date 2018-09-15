@@ -1,0 +1,17 @@
+<resources>
+    <string name="app_name">Lista Contatos SDM</string>
+    <string name="configura_o">Configuração</string>
+    <string name="novo_contato">Novo Contato</string>
+    <string name="sair">Sair</string>
+    <string name="editar_contrato">Editar Contato</string>
+    <string name="ligar_para_contato">Ligar para Contato</string>
+    <string name="ver_endere_o">Ver Endereço</string>
+    <string name="remover_contato">Remover Contato</string>
+    <string name="enviar_email">Enviar Email</string>
+    <string name="nome">Nome</string>
+    <string name="endereco">Endereco</string>
+    <string name="telefone">Telefone</string>
+    <string name="email">Email</string>
+    <string name="cancelar">Cancelar</string>
+    <string name="salvar">Salvar</string>
+</resources>

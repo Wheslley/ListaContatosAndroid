@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item
+        android:id="@+id/editarContatoMenuItem"
+        android:title="@string/editar_contrato" />
+
+    <item
+        android:id="@+id/ligarContatoMenuItem"
+        android:title="@string/ligar_para_contato" />
+
+    <item
+        android:id="@+id/verEnderecoMenuItem"
+        android:title="@string/ver_endere_o" />
+
+    <item
+        android:id="@+id/enviarEmailContatoMenuItem"
+        android:title="@string/enviar_email" />
+
+    <item
+        android:id="@+id/removerContatoMenuItem"
+        android:title="@string/remover_contato" />
+
+</menu>
