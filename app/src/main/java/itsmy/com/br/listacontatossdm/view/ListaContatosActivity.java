@@ -1,8 +1,12 @@
 package itsmy.com.br.listacontatossdm.view;
 
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.view.ContextMenu;
 import android.view.Menu;
@@ -12,6 +16,10 @@ import android.widget.AdapterView;
 import android.widget.ListView;
 import android.widget.Toast;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -21,6 +29,9 @@ import java.util.TreeSet;
 import itsmy.com.br.listacontatossdm.R;
 import itsmy.com.br.listacontatossdm.adapter.ListaContatosAdapter;
 import itsmy.com.br.listacontatossdm.model.Contato;
+import itsmy.com.br.listacontatossdm.util.ArmazenamentoHelper;
+import itsmy.com.br.listacontatossdm.util.Configuracoes;
+import itsmy.com.br.listacontatossdm.util.JsonHelper;
 
 public class ListaContatosActivity extends AppCompatActivity implements AdapterView.OnItemClickListener {
 
@@ -38,6 +49,9 @@ public class ListaContatosActivity extends AppCompatActivity implements AdapterV
 
     private List<Contato> listaContatos;
     private ListaContatosAdapter listaContatosAdapter;
+    private SharedPreferences sharedPreferences;
+    private final String CONFIGURACOES_SHARED_PREFERENCES = "CONFIGURACOES";
+    private final String TIPO_ARMAZENAMENTO_SHARED_PREFERENCES = "TIPO_ARMAZENAMENTO";
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -48,7 +62,6 @@ public class ListaContatosActivity extends AppCompatActivity implements AdapterV
         this.listaContatos = new ArrayList<>();
 
         //preencheListaContatos();
-
         /*List<String> listaNomes = new ArrayList<>();
         for(Contato contato : listaContatos) listaNomes.add(contato.getNome());*/
 
@@ -58,6 +71,56 @@ public class ListaContatosActivity extends AppCompatActivity implements AdapterV
 
         registerForContextMenu(this.listaContatosListView);
         this.listaContatosListView.setOnItemClickListener(this);
+
+        sharedPreferences = getSharedPreferences(CONFIGURACOES_SHARED_PREFERENCES, MODE_PRIVATE);
+        restauraConfiguracoes();
+        restauraContatos();
+    }
+
+    private void restauraContatos() {
+        JSONArray jsonArray = null;
+        try{
+            jsonArray = ArmazenamentoHelper.buscarContatos(this, Configuracoes.getInstance().getTipoArmazenamento());
+            if(jsonArray != null){
+                List<Contato> contatosSalvosList = JsonHelper.jsonArrayParaListaContatos(jsonArray);
+                if(contatosSalvosList.size() > 0){
+                    this.listaContatos.addAll(contatosSalvosList);
+                    this.listaContatosAdapter.notifyDataSetChanged();
+                }
+            }
+        } catch (JSONException | IOException e) {
+            e.printStackTrace();
+        }
+
+    }
+
+    private void restauraConfiguracoes() {
+        Configuracoes.getInstance().setTipoArmazenamento(this.sharedPreferences.getInt(TIPO_ARMAZENAMENTO_SHARED_PREFERENCES, Configuracoes.ARMAZENAMENTO_INTERNO));
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        salvaConfiguracoes();
+        salvaContatos();
+    }
+
+    private void salvaContatos() {
+        JSONArray jsonArray = null;
+        try{
+            jsonArray = JsonHelper.listaContatosParaJsonArray(listaContatos);
+            if(jsonArray != null){
+                ArmazenamentoHelper.salvarContatos(this, Configuracoes.getInstance().getTipoArmazenamento(), jsonArray);
+            }
+        } catch (JSONException | IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void salvaConfiguracoes() {
+        SharedPreferences.Editor editor = this.sharedPreferences.edit();
+        editor.putInt(TIPO_ARMAZENAMENTO_SHARED_PREFERENCES, Configuracoes.getInstance().getTipoArmazenamento());
+        editor.commit();
     }
 
     public void preencheListaContatos() {
@@ -76,6 +139,8 @@ public class ListaContatosActivity extends AppCompatActivity implements AdapterV
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.configuracaoMenuItem:
+                Intent configuracaçoesIntent = new Intent(this, ConfiguracoesActivity.class);
+                startActivity(configuracaçoesIntent);
                 return true;
             case R.id.novoContatoMenuItem:
                 //Intent novoContatoIntent = new Intent(this, ContatoActivity.class);
@@ -148,16 +213,59 @@ public class ListaContatosActivity extends AppCompatActivity implements AdapterV
                 detalhesContatoOpen("NOVO_CONTATO_ACTION", CONTATO_EXTRA, EDITAR_CONTATO, infoMenu.position, contato);
                 return true;
             case R.id.ligarContatoMenuItem:
+                ligarContato(contato.getTelefone());
                 return true;
             case R.id.verEnderecoMenuItem:
+                localizarContato(contato.getEndereco());
                 return true;
             case R.id.enviarEmailContatoMenuItem:
+                enviarEmailContato(contato.getEmail());
                 return true;
             case R.id.removerContatoMenuItem:
+                removerContato(infoMenu.position);
                 return true;
         }
 
         return false;
+    }
+
+    private void ligarContato(String telefone){
+        Uri telefoneUri = Uri.parse("tel:" + telefone);
+        Intent ligarContatoIntent = new Intent(Intent.ACTION_DIAL, telefoneUri);
+        startActivity(ligarContatoIntent);
+    }
+
+    private void localizarContato(String endereco){
+        Uri enderecoUri = Uri.parse("geo:0,0?q=" + endereco);
+        Intent localizarContatoIntent = new Intent(Intent.ACTION_VIEW, enderecoUri);
+        startActivity(localizarContatoIntent);
+    }
+
+    private void enviarEmailContato(String email){
+        Uri emailUri = Uri.parse("mailto:" + email);
+        Intent emailContatoIntent = new Intent(Intent.ACTION_SENDTO, emailUri);
+        startActivity(emailContatoIntent);
+    }
+
+    private void removerContato(final int posicao) {
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+
+        builder.setCancelable(true).setMessage("Deseja remover o contato?").setPositiveButton("Remover", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                listaContatos.remove(posicao);
+                listaContatosAdapter.notifyDataSetChanged();
+            }
+        }).setNegativeButton("Voltar", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+
+            }
+        });
+
+        AlertDialog removeAlertDialog = builder.create();
+        removeAlertDialog.show();
     }
 
     @Override

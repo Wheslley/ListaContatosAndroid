@@ -2,6 +2,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="itsmy.com.br.listacontatossdm">
 
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+
     <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
@@ -18,10 +21,12 @@
         </activity>
         <activity android:name=".view.ContatoActivity">
             <intent-filter>
-                <action android:name="NOVO_CONTATO_ACTION"></action>
-                <category android:name="android.intent.category.DEFAULT"></category>
+                <action android:name="NOVO_CONTATO_ACTION" />
+
+                <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
+        <activity android:name=".view.ConfiguracoesActivity"></activity>
     </application>
 
 </manifest>
